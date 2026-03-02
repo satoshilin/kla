@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Openings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="deploy-version.js?v=__DEPLOY_TIME__"></script>
+  </head>
+  <body class="m-0 min-h-screen bg-gradient-to-b from-[#2B5FB5] to-[#4C089B]">
+    <main class="mx-auto flex h-screen w-full max-w-[56.25vh] flex-col overflow-hidden bg-[#efefef]">
+      <header class="flex h-[13%] shrink-0 items-center justify-center bg-[#109BD4]">
+        <img src="svg/header_jobopening.svg" alt="Job Openings" class="h-auto w-[85%]" />
+      </header>
+
+      <a href="index.html" class="flex shrink-0 items-center gap-3 border-b border-[#d4d4d4] bg-[#ececec] px-6 py-4 text-[2.1vh] text-[#333]">
+        <span class="text-[3vh] leading-none">←</span>
+        <span>HOME</span>
+      </a>
+
+      <section id="feed" class="min-h-0 flex-1 overflow-y-auto bg-[#efefef]"></section>
+
+      <nav class="shrink-0 border-t border-[#cfcfcf] bg-[#e6e6e6] px-3 py-3">
+        <div class="grid grid-cols-5 items-center gap-2">
+          <a href="index.html" class="flex justify-center"><img src="svg/bottom_menu/btn_home.svg" alt="Home" class="h-[4.2vh] w-auto" /></a>
+          <a href="https://www.kla.com/zh-hant" class="flex justify-center"><img src="svg/bottom_menu/btn_officialwebsite.svg" alt="Official Website" class="h-[4.2vh] w-auto" /></a>
+          <a href="jobopening.html" class="flex justify-center"><img src="svg/bottom_menu/btn_jobopening_selected.svg" alt="Job Opening" class="h-[4.2vh] w-auto" /></a>
+          <a href="experiencesharing.html" class="flex justify-center"><img src="svg/bottom_menu/btn_experiencesharing.svg" alt="Experience Sharing" class="h-[4.2vh] w-auto" /></a>
+          <a href="copanyprospects.html" class="flex justify-center"><img src="svg/bottom_menu/btn_compnayprospects.svg" alt="Company Prospects" class="h-[4.2vh] w-auto" /></a>
+        </div>
+      </nav>
+    </main>
+
+    <script>
+      const roleByArticle = {
+        1: "Customer Service Engineer",
+        2: "Applications Engineer",
+        3: "Installations Engineer",
+        4: "Technical Support Engineer",
+        5: "Algo/Software Engineer",
+      };
+
+      const posterStyles = [
+        "from-[#2a0a01] via-[#7a2400] to-[#1f0800] border-[#f6811f]",
+        "from-[#022109] via-[#146118] to-[#001a08] border-[#53c33f]",
+        "from-[#342900] via-[#9b7d05] to-[#2d2300] border-[#e7cc24]",
+        "from-[#07122f] via-[#19367c] to-[#09132b] border-[#2c93ff]",
+        "from-[#1f303f] via-[#6d7f8d] to-[#273441] border-[#aec4d3]",
+      ];
+
+      const actionRow = `
+        <div class="flex items-center justify-between px-8 pb-6 pt-12">
+          <div class="flex items-center gap-[4rem]">
+            <img src="svg/btn_like.svg" alt="Like" class="h-[2.4vh] w-auto" />
+            <img src="svg/btn_comment.svg" alt="Comment" class="h-[2.4vh] w-auto" />
+            <img src="svg/btn_share.svg" alt="Share" class="h-[2.4vh] w-auto" />
+          </div>
+          <img src="svg/btn_bookmark.svg" alt="Bookmark" class="h-[2.4vh] w-auto" />
+        </div>
+      `;
+
+      const cleanContext = (text) =>
+        text
+          .replace(/\*\*(.*?)\*\*/g, "$1")
+          .replace(/__(.*?)__/g, "$1")
+          .replace(/^\s*[-*+]\s+/gm, "")
+          .replace(/\n+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      const escapeHtml = (text) =>
+        text
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      const renderInlineMarkdown = (text) =>
+        escapeHtml(text)
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/__(.+?)__/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>")
+          .replace(/_(.+?)_/g, "<em>$1</em>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>");
+      const renderMarkdown = (text) => {
+        const lines = String(text ?? "").replace(/\r/g, "").split("\n");
+        const isOrderedLine = (value) => /^\d+\.\s+/.test(value.trim());
+        const isUnorderedLine = (value) => /^[-*+]\s+/.test(value.trim());
+        const blocks = [];
+        let blankGapCount = 0;
+        const appendBlock = (html) => {
+          if (blankGapCount > 0 && blocks.length) blocks.push(`<div style="height:${blankGapCount * 2}em"></div>`);
+          blocks.push(html);
+          blankGapCount = 0;
+        };
+        let i = 0;
+        while (i < lines.length) {
+          const line = lines[i].trim();
+          if (!line) {
+            blankGapCount++;
+            i++;
+            continue;
+          }
+          if (isOrderedLine(lines[i]) || isUnorderedLine(lines[i])) {
+            const ordered = isOrderedLine(lines[i]);
+            const listTag = ordered ? "ol" : "ul";
+            const markerRegex = ordered ? /^\d+\.\s+/ : /^[-*+]\s+/;
+            const items = [];
+            while (i < lines.length) {
+              const current = lines[i].trim();
+              if (!current) break;
+              if (!(ordered ? isOrderedLine(lines[i]) : isUnorderedLine(lines[i]))) break;
+              const itemLines = [current.replace(markerRegex, "")];
+              i++;
+              while (i < lines.length) {
+                const continuation = lines[i].trim();
+                if (!continuation) break;
+                if (isOrderedLine(lines[i]) || isUnorderedLine(lines[i])) break;
+                itemLines.push(continuation);
+                i++;
+              }
+              items.push(`<li>${itemLines.map(renderInlineMarkdown).join("<br />")}</li>`);
+            }
+            appendBlock(`<${listTag}>${items.join("")}</${listTag}>`);
+            continue;
+          }
+          const paragraphLines = [];
+          while (i < lines.length) {
+            const current = lines[i].trim();
+            if (!current) break;
+            if (isOrderedLine(lines[i]) || isUnorderedLine(lines[i])) break;
+            paragraphLines.push(current);
+            i++;
+          }
+          appendBlock(`<p>${paragraphLines.map(renderInlineMarkdown).join("<br />")}</p>`);
+        }
+        return blocks.join("");
+      };
+      const shortContext = (text) => {
+        const cleaned = cleanContext(text);
+        return cleaned.length > 64 ? `${cleaned.slice(0, 64)}...` : cleaned;
+      };
+
+      let feedEl = null;
+      let articlesCache = [];
+      let expandedArticleId = null;
+
+      function createPost(article, idx, isExpanded) {
+        const role = roleByArticle[article.ArticleID] || article.Title;
+        const context = isExpanded ? renderMarkdown(article.Context) : escapeHtml(shortContext(article.Context));
+        const photoName =
+          typeof article.PhotoFilename === "string" && article.PhotoFilename.trim()
+            ? article.PhotoFilename.trim()
+            : typeof article.PhotoName === "string" && article.PhotoName.trim()
+              ? article.PhotoName.trim()
+              : "";
+        const photoSrc = photoName ? `./photo/${photoName}` : "";
+        const photoBlock = photoSrc
+          ? `<div data-photo-wrap><img src="${photoSrc}" alt="${article.Title}" class="block h-auto w-full" loading="lazy" onerror="this.onerror=null;this.parentElement.remove();" /></div>`
+          : "";
+        const moreButton = isExpanded
+          ? ""
+          : `<button type="button" data-article-id="${article.ArticleID}" class="mt-2 ml-auto block text-[1.6vh] font-semibold text-[#1599dc]">更多內容</button>`;
+        return `
+          <article class="mb-3 border-b border-[#d6d6d6] bg-[#efefef]">
+            <div class="flex items-start gap-3 px-4 pb-2 pt-3">
+              <img src="avatar/${article.AvartarPicName}" alt="${article.Name}" class="h-[5.4vh] w-[5.4vh] rounded-full object-cover" />
+              <div class="min-w-0 flex-1 -mt-[0.2vh]">
+                <h2 class="text-[2.2vh] font-semibold leading-none text-[#2f2f2f]">${article.Name}</h2>
+                <p class="pt-1 text-[1.6vh] font-medium leading-tight text-[#333]">${article.Title}</p>
+              </div>
+              <span class="pt-1 text-[2.4vh] leading-none text-[#9a9a9a]">•••</span>
+            </div>
+
+            ${photoBlock}
+
+            ${actionRow}
+            <div class="px-10 pb-24 text-[1.6vh] font-normal leading-relaxed text-[#353535]">
+              <div class="[&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:pl-[1.25em] [&_ol]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:list-outside [&_ul]:pl-[1.25em] [&_ul]:space-y-1">${context}</div>
+              ${moreButton}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderPosts() {
+        if (!(feedEl instanceof HTMLElement)) return;
+        feedEl.innerHTML = articlesCache.map((article, idx) => createPost(article, idx, expandedArticleId === article.ArticleID)).join("");
+        if (typeof window.refreshVersionedResources === "function") window.refreshVersionedResources(feedEl);
+      }
+
+      function onFeedClick(event) {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest("button[data-article-id]");
+        if (!(button instanceof HTMLButtonElement)) return;
+        const articleId = Number(button.dataset.articleId);
+        if (Number.isNaN(articleId)) return;
+        expandedArticleId = expandedArticleId === articleId ? null : articleId;
+        renderPosts();
+      }
+
+      async function renderFeed() {
+        const feed = document.getElementById("feed");
+        if (!(feed instanceof HTMLElement)) return;
+        feedEl = feed;
+        feedEl.addEventListener("click", onFeedClick);
+        try {
+          const dataUrl =
+            typeof window.withDeployVersion === "function"
+              ? window.withDeployVersion("database/job_opening.json")
+              : "database/job_opening.json";
+          const res = await fetch(dataUrl);
+          const data = await res.json();
+          articlesCache = Array.isArray(data.articles) ? data.articles : [];
+          expandedArticleId = null;
+          renderPosts();
+        } catch (error) {
+          feedEl.innerHTML = `<p class="px-6 py-8 text-[2.2vh] text-[#666]">資料載入失敗，請稍後再試。</p>`;
+          console.error(error);
+        }
+      }
+
+      renderFeed();
+    </script>
+  </body>
+</html>

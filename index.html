@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KLA Kiosk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="deploy-version.js?v=__DEPLOY_TIME__"></script>
+  </head>
+  <body class="m-0 min-h-screen bg-black">
+    <main class="mx-auto flex h-screen w-full max-w-[56.25vh] flex-col overflow-hidden">
+      <header class="flex h-[13%] items-center justify-center bg-[#109BD4]">
+        <img src="svg/kla_logo.svg" alt="KLA logo" class="h-[48%] w-auto" />
+      </header>
+
+      <section class="relative h-[32%] bg-black">
+        <video id="intro-video" class="h-full w-full object-cover" autoplay loop muted playsinline preload="auto">
+          <source src="introduction.mp4" type="video/mp4" />
+        </video>
+        <button
+          id="unmute-btn"
+          type="button"
+          class="absolute bottom-3 right-3 rounded-md bg-black/70 px-6 py-3 text-base font-semibold text-white"
+        >
+          開啟聲音 🔊
+        </button>
+      </section>
+
+      <section class="flex h-[55%] items-center justify-center bg-gradient-to-b from-[#2B5FB5] to-[#4C089B] px-7 py-6">
+        <div class="grid w-[70%] grid-cols-2 gap-[4.5rem]">
+          <a href="https://www.kla.com/zh-hant" class="block">
+            <img src="svg/btn_officialwebsite.svg" alt="Official Website" class="h-auto w-full" />
+          </a>
+          <a href="copanyprospects.html" class="block">
+            <img src="svg/btn_compnayprospects.svg" alt="Company Prospects" class="h-auto w-full" />
+          </a>
+          <a href="jobopening.html" class="block">
+            <img src="svg/btn_jobopening.svg" alt="Job Openings" class="h-auto w-full" />
+          </a>
+          <a href="experiencesharing.html" class="block">
+            <img src="svg/btn_experiencesharing.svg" alt="Experience Sharing" class="h-auto w-full" />
+          </a>
+        </div>
+      </section>
+    </main>
+    <script>
+      const introVideo = document.getElementById("intro-video");
+      const unmuteBtn = document.getElementById("unmute-btn");
+
+      if (introVideo instanceof HTMLVideoElement) {
+        introVideo.play().catch((error) => {
+          console.error("Video autoplay with sound failed:", error);
+        });
+      }
+
+      if (introVideo instanceof HTMLVideoElement && unmuteBtn instanceof HTMLButtonElement) {
+        unmuteBtn.addEventListener("click", () => {
+          introVideo.muted = false;
+          introVideo.volume = 1;
+          introVideo.play().catch((error) => {
+            console.error("Video unmute play failed:", error);
+          });
+          unmuteBtn.classList.add("hidden");
+        });
+      }
+    </script>
+  </body>
+</html>
