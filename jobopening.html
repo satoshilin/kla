@@ -161,7 +161,7 @@
           ? ""
           : `<button type="button" data-article-id="${article.ArticleID}" class="mt-2 ml-auto block text-[1.6vh] font-semibold text-[#1599dc]">更多內容</button>`;
         return `
-          <article class="mb-3 border-b border-[#d6d6d6] bg-[#efefef]">
+          <article data-article-id="${article.ArticleID}" class="mb-3 border-b border-[#d6d6d6] bg-[#efefef]">
             <div class="flex items-start gap-3 px-4 pb-2 pt-3">
               <img src="avatar/${article.AvartarPicName}" alt="${article.Name}" class="h-[5.4vh] w-[5.4vh] rounded-full object-cover" />
               <div class="min-w-0 flex-1 -mt-[0.2vh]">
@@ -193,10 +193,17 @@
         if (!(target instanceof Element)) return;
         const button = target.closest("button[data-article-id]");
         if (!(button instanceof HTMLButtonElement)) return;
+        const articleEl = button.closest("article[data-article-id]");
+        const topBefore = articleEl instanceof HTMLElement ? articleEl.getBoundingClientRect().top : null;
         const articleId = Number(button.dataset.articleId);
         if (Number.isNaN(articleId)) return;
         expandedArticleId = expandedArticleId === articleId ? null : articleId;
         renderPosts();
+        if (!(feedEl instanceof HTMLElement) || topBefore === null) return;
+        const nextArticle = feedEl.querySelector(`article[data-article-id="${articleId}"]`);
+        if (!(nextArticle instanceof HTMLElement)) return;
+        const topAfter = nextArticle.getBoundingClientRect().top;
+        feedEl.scrollTop += topAfter - topBefore;
       }
 
       async function renderFeed() {
