@@ -163,8 +163,8 @@
             ${photoBlock}
 
             ${actionRow}
-            <div class="px-10 pb-16 text-[1.6vh] font-normal leading-relaxed text-[#353535]">
-              <div class="[&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:pl-[1.25em] [&_ol]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:list-outside [&_ul]:pl-[1.25em] [&_ul]:space-y-1">${context}</div>
+            <div data-role="post-actions" class="px-10 pb-16 text-[1.6vh] font-normal leading-relaxed text-[#353535]">
+              <div data-role="post-context" class="[&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:list-outside [&_ol]:pl-[1.25em] [&_ol]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:list-disc [&_ul]:list-outside [&_ul]:pl-[1.25em] [&_ul]:space-y-1">${context}</div>
               ${moreButton}
             </div>
           </article>
@@ -177,6 +177,32 @@
         if (typeof window.refreshVersionedResources === "function") window.refreshVersionedResources(feedEl);
       }
 
+      function updateArticleContent(articleId) {
+        if (!(feedEl instanceof HTMLElement)) return;
+        const article = articlesCache.find((item) => item.ArticleID === articleId);
+        if (!article) return;
+        const articleEl = feedEl.querySelector(`article[data-article-id="${articleId}"]`);
+        if (!(articleEl instanceof HTMLElement)) return;
+        const contextEl = articleEl.querySelector('[data-role="post-context"]');
+        if (contextEl instanceof HTMLElement) {
+          contextEl.innerHTML =
+            expandedArticleId === articleId ? renderMarkdown(article.Context) : escapeHtml(shortContext(article.Context));
+        }
+        const actionsEl = articleEl.querySelector('[data-role="post-actions"]');
+        if (!(actionsEl instanceof HTMLElement)) return;
+        const existingButton = actionsEl.querySelector("button[data-article-id]");
+        if (expandedArticleId === articleId) {
+          if (existingButton instanceof HTMLButtonElement) existingButton.remove();
+          return;
+        }
+        if (!(existingButton instanceof HTMLButtonElement)) {
+          actionsEl.insertAdjacentHTML(
+            "beforeend",
+            `<button type="button" data-article-id="${articleId}" class="mt-2 ml-auto block text-[1.6vh] font-semibold text-[#1599dc]">更多內容</button>`
+          );
+        }
+      }
+
       function onFeedClick(event) {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -186,8 +212,10 @@
         const topBefore = articleEl instanceof HTMLElement ? articleEl.getBoundingClientRect().top : null;
         const articleId = Number(button.dataset.articleId);
         if (Number.isNaN(articleId)) return;
+        const previousExpandedId = expandedArticleId;
         expandedArticleId = expandedArticleId === articleId ? null : articleId;
-        renderPosts();
+        if (previousExpandedId !== null && previousExpandedId !== articleId) updateArticleContent(previousExpandedId);
+        updateArticleContent(articleId);
         if (!(feedEl instanceof HTMLElement) || topBefore === null) return;
         const nextArticle = feedEl.querySelector(`article[data-article-id="${articleId}"]`);
         if (!(nextArticle instanceof HTMLElement)) return;
