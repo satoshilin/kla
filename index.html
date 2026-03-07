@@ -15,9 +15,7 @@
       </header>
 
       <section class="relative h-[32%] bg-gradient-to-b from-[#2B5FB5] to-[#4C089B]">
-        <video id="intro-video" class="h-full w-full object-cover" autoplay loop muted playsinline preload="auto">
-          <source src="introduction.mp4" type="video/mp4" />
-        </video>
+        <video id="intro-video" class="h-full w-full object-cover" autoplay muted playsinline preload="auto"></video>
         <button
           id="unmute-btn"
           type="button"
@@ -47,11 +45,24 @@
     <script>
       const introVideo = document.getElementById("intro-video");
       const unmuteBtn = document.getElementById("unmute-btn");
+      const introVideos = ["introduction.mp4", "introduction2.mp4", "introduction3.mp4"];
+      let currentVideoIndex = 0;
 
       if (introVideo instanceof HTMLVideoElement) {
-        introVideo.play().catch((error) => {
-          console.error("Video autoplay with sound failed:", error);
+        const playCurrentVideo = () => {
+          introVideo.src = introVideos[currentVideoIndex];
+          introVideo.load();
+          introVideo.play().catch((error) => {
+            console.error("Video autoplay failed:", error);
+          });
+        };
+
+        introVideo.addEventListener("ended", () => {
+          currentVideoIndex = (currentVideoIndex + 1) % introVideos.length;
+          playCurrentVideo();
         });
+
+        playCurrentVideo();
       }
 
       if (introVideo instanceof HTMLVideoElement && unmuteBtn instanceof HTMLButtonElement) {
