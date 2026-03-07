@@ -46,11 +46,41 @@
       const introVideo = document.getElementById("intro-video");
       const unmuteBtn = document.getElementById("unmute-btn");
       const introVideos = ["introduction.mp4", "introduction2.mp4", "introduction3.mp4"];
-      let currentVideoIndex = 0;
+      const videoQueueStorageKey = "kla-intro-video-queue-v1";
+
+      const shuffleVideos = () => {
+        const shuffled = [...introVideos];
+
+        for (let i = shuffled.length - 1; i > 0; i -= 1) {
+          const randomIndex = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+        }
+
+        return shuffled;
+      };
+
+      const getNextVideoSource = () => {
+        const storedQueue = sessionStorage.getItem(videoQueueStorageKey);
+        let queue = storedQueue ? storedQueue.split("|").filter(Boolean) : [];
+        const isQueueValid = queue.every((video) => introVideos.includes(video));
+
+        if (!isQueueValid) {
+          queue = [];
+        }
+
+        if (queue.length === 0) {
+          queue = shuffleVideos();
+        }
+
+        const [nextVideo, ...remainingQueue] = queue;
+        sessionStorage.setItem(videoQueueStorageKey, remainingQueue.join("|"));
+
+        return nextVideo;
+      };
 
       if (introVideo instanceof HTMLVideoElement) {
         const playCurrentVideo = () => {
-          introVideo.src = introVideos[currentVideoIndex];
+          introVideo.src = getNextVideoSource();
           introVideo.load();
           introVideo.play().catch((error) => {
             console.error("Video autoplay failed:", error);
@@ -58,7 +88,6 @@
         };
 
         introVideo.addEventListener("ended", () => {
-          currentVideoIndex = (currentVideoIndex + 1) % introVideos.length;
           playCurrentVideo();
         });
 
