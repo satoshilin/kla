@@ -1,6 +1,6 @@
 (() => {
   // Adjust this value (milliseconds) to change inactivity timeout.
-  const INACTIVITY_RETURN_HOME_MS = 5000;
+  const INACTIVITY_RETURN_HOME_MS = 30000;
   const HOME_PATH = "index.html";
   let inactivityTimerId = null;
 
